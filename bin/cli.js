@@ -3,7 +3,7 @@ const commander = require('commander');
 const path = require('path');
 const analyzer = require('../lib/analyser');
 const viewer = require('../lib/viewer.cjs');
-const Logger = require('../lib/Logger');
+const Logger = require('../lib/Logger.cjs');
 import { madge } from "../lib/api.js";
 
 const program = commander
