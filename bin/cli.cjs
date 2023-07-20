@@ -1,13 +1,11 @@
 const {resolve, dirname} = require('path');
 const commander = require('commander');
 const path = require('path');
-const analyzer = require('../lib/analyser');
+const analyzer = require('../lib/analyser.cjs');
 const viewer = require('../lib/viewer.cjs');
 const Logger = require('../lib/Logger.cjs');
-import { madge } from "../lib/api.js";
 
 const program = commander
-  .name("analyze_dependency")
   .version(require("../package.json").version)
   .usage(
     `<bundleStatsFile> [bundleDir] [options]
@@ -21,16 +19,16 @@ const program = commander
   )
   .option(
     "-m, --mode <mode>",
-    "Analyzer mode. Should be `server`,`static` or `json`." +
-      br(
-        "In `server` mode analyzer will start HTTP server to show bundle report."
-      ) +
-      br(
-        "In `static` mode single HTML file with bundle report will be generated."
-      ) +
-      br(
-        "In `json` mode single JSON file with bundle report will be generated."
-      ),
+    "Analyzer mode. Should be `server`,`static` or `json`.\n" +
+     
+        "In `server` mode analyzer will start HTTP server to show bundle report.\n"
+       +
+      
+        "In `static` mode single HTML file with bundle report will be generated.\n"
+       +
+      
+        "In `json` mode single JSON file with bundle report will be generated.\n"
+      ,
     "static"
   )
   .option(
@@ -43,8 +41,8 @@ const program = commander
   )
   .option(
     '-l, --log-level <level>',
-    'Log level.' +
-    br(`Possible values: ${[...Logger.levels].join(', ')}`),
+    'Log level.\n' +
+     `Possible values: ${[...Logger.levels].join(', ')}`,
     Logger.defaultLevel
   )
   .parse(process.argv);
@@ -61,14 +59,14 @@ if (mode !== 'server' && mode !== 'static' && mode !== 'json') {
 }
 bundleStatsFile = resolve(bundleStatsFile);
 
-const packagePath = path.join(process.cwd(), "package.json");
+bundleStatsFile = path.join(bundleStatsFile, "package.json");
 parseAndAnalyse(bundleStatsFile);
 
 async function parseAndAnalyse(bundleStatsFile) {
   try {
-    const bundleStats = await analyzer.readStatsFromFile(bundleStatsFile);
+    const bundleStats =  analyzer.readStatsFromFile(bundleStatsFile);
     if (mode === 'server') {
-
+      viewer.startServer(bundleStats);
     } else if (mode === 'static') {
       viewer.generateReport(bundleStats, {
         openBrowser,
@@ -86,21 +84,15 @@ async function parseAndAnalyse(bundleStatsFile) {
       });
     }
   } catch (err) {
-    logger.error(`Couldn't read webpack bundle stats from "${bundleStatsFile}":\n${err}`);
-    logger.debug(err.stack);
+    // logger.error(`Couldn't read webpack bundle stats from "${bundleStatsFile}":\n${err}`);
+    // logger.debug(err.stack);
     process.exit(1);
   }
 }
 
 function showHelp(error) {
-  if (error) console.log(`\n  ${magenta(error)}\n`);
+  if (error) console.log(`\n  ${(error)}\n`);
   program.outputHelp();
   process.exit(1);
 }
 
-const packageConfig = madge(packagePath);
-// 检查
-// if (!program.args.length && !program.stdin) {
-//   console.log(program.helpInformation());
-//   process.exit(1);
-// }
