@@ -19,13 +19,7 @@ import * as d3 from "d3";
 // }
 // const LinePlot: FC<graphPlotPorps> = (props) => {
 
-function linkArc(d) {
-  const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
-  return `
-    M${d.source.x},${d.source.y}
-    A${r},${r} 0 0,1 ${d.target.x},${d.target.y}
-  `;
-}
+
 
 // 缩放事件的回调函数
 
@@ -41,129 +35,174 @@ const LinePlot = (props) => {
   const svgRef = useRef(null);
   const [shouldRender, setShouldRender] = useState(true);
   // 在组件外部创建 <defs> 和 <g> 元素
-  let data_ = data.map(l => [l.source, l.target]).flat()
-  const nodes = Array.from(new Set(data_), id => ({ id }),{fx: null, fy: null});
-  const types = Array.from(new Set(data.map(d => d.type)));
-  const links = data.map(d => Object.create(d))
-
+  const { graph, nodeArray } = data;
+  const types = Array.from(new Set(nodeArray.map(d => d.type)));
+  const links = graph.map(d => Object.create(d))
+  const gdefs = d3.create("svg:defs");
+  const gLink = d3.create("svg:g");
+  const gNode = d3.create("svg:g");
+  var nominal_stroke = 1.5;
+  var max_stroke = 4.5;
+  var min_zoom = 0.1;
+  var max_zoom = 7;
   useEffect(() => {
     if (shouldRender) {
-      const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id))
+      const simulation = d3.forceSimulation(nodeArray)
+        .force("link", d3.forceLink(graph).id(d => d.id))
         .force("charge", d3.forceManyBody().strength(-400))
         .force("x", d3.forceX())
         .force("y", d3.forceY());
-
+      const zoom = d3.zoom()
+        .scaleExtent([1, 10]) // 设置缩放范围，1 表示原始大小，10 表示最大放大为原始大小的10倍
+        .on("zoom", (d3) => zoomed(d3));
       const color = d3.scaleOrdinal(types, d3.schemeCategory10);
-     
+
+
       const svg = d3.select(svgRef.current)
         .attr("viewBox", [-width / 2, -height / 2, width, height])
         .attr("width", width)
         .attr("height", height)
         .attr("style", "max-width: 100%; height: auto; font: 12px sans-serif;")
-      
-        const zoom = d3.zoom()
-        .scaleExtent([1, 10]) // 设置缩放范围，1 表示原始大小，10 表示最大放大为原始大小的10倍
-        .on("zoom", zoomed);
-      // 定义缩放函数的回调
-      function zoomed(event) {
-        debugger
-        // 获取缩放和平移的变换
-        const transform = event.transform;
+        .call(zoom)
 
-        // 更新链接和节点的位置
-        link.attr('d', linkArc);
-        node.attr('transform', d => `translate(${transform.apply([d.x, d.y])})`);
-      }
-
-      
+      // 在 useEffect 中选择 <g> 和 <defs> 元素
+      svg.append(() => gdefs.node());
+      const g = svg.append(() => gLink.node());
+      const node_ = svg.append(() => gNode.node());
       // 创建 <defs> 元素并添加 <marker>
-      svg.append("defs").selectAll("marker")
+      gdefs.selectAll("marker")
         .data(types) // 使用 data() 方法绑定数据
-        .join("marker")
+        .join("marker") // 根据数据绑定状态对元素进行操作
         .attr("id", d => `arrow-${d}`)
         .attr("viewBox", "0 -5 10 10")
         .attr("refX", 15)
         .attr("refY", -0.5)
         .attr("markerWidth", 6)
         .attr("markerHeight", 6)
-        .attr("orient", "auto")
-        .append("path")
-        .attr("fill", d => color)
+        .attr("orient", "auto") // 定义图形在路径上的朝向： auto-浏览器会自动根据路径的朝向来调整图形的朝向。
+        .append("path") // append 添加 用于绘制路径，例如曲线、线段等。主要用于箭头
+        .attr("fill", color)
         .attr("d", "M0,-5L10,0L0,5");
-
       // 创建 <g> 元素并添加链接（<path>）
-      const link = svg.append("g")
+      const link = gLink
         .attr("fill", "none")
-        .attr("stroke-width", 1.5)
+        .attr("stroke-width", nominal_stroke)
         .selectAll("path")
-        .data(links)// 使用 data() 方法绑定数据
+        .data(graph)// 使用 data() 方法绑定数据
         .join("path")// 使用 join() 方法来创建 <path> 元素
         .attr("stroke", d => color(d.type))
-        .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`);
+        .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`)
 
       // 创建 <g> 元素并添加节点（<circle> 和 <text>）
-       const node = svg.append("g")
+
+      const node = gNode
         .attr("fill", "currentColor")
         .attr("stroke-linecap", "round")
         .attr("stroke-linejoin", "round")
         .selectAll("g")
-        .data(nodes)
+        .data(nodeArray)
         .join("g")
-        .call(drag(simulation));
-
-      node.append("circle")
+        .call(drag(simulation))
+        .on('mouseover', handleMouseOver)
+        .on('click', handleMouseOut) // 点击节点
+        // .on('mouseout', handleMouseOut) // 鼠标移开节点
+      // 用于判断连接线的文本是否与节点相连
+  
+      // // 鼠标移入节点时的处理函数
+      // function mouseover(event, d) {
+      //   var hoveredNode = d; // 获取当前鼠标悬停的节点数据
+      //   console.log("当前悬停的节点：", hoveredNode);
+      //   node.classed("faded", true); // 先将所有节点变暗
+      //   d3.select(this).classed("highlighted", true); // 鼠标所在节点高亮
+      // }
+      function handleMouseOver(event,d) {
+        var hoveredNode = d; // 获取当前鼠标悬停的节点数据
+        console.log("当前悬停的节点：", hoveredNode);
+        // 设置节点的透明度
+        node.style('opacity', d => {
+          hoveredNode
+          if(d.id===hoveredNode.id) return 1;
+          const opacityValue = graph.some((item) => {
+            return item.source.id === hoveredNode.id && item.target.id === d.id;
+          }) ? 1 : 0.1;
+          return opacityValue;
+         
+        });
+        // 设置连接线的透明度
+        link.style('opacity', link => link.source === d  ? 1 : 0.1);
+      }
+      function handleMouseOut(event,d) {
+        var hoveredNode = d; // 获取当前鼠标悬停的节点数据
+        console.log("当前悬停的节点：", hoveredNode);
+        // 设置节点的透明度
+        node.style('opacity', 1);
+        // 设置连接线的透明度
+        link.style('opacity', 1);
+      }
+      const circle = node.append("circle")
         .attr("stroke", "white")
-        .attr("stroke-width", 1.5)
-        .attr("r", 4);
+        .attr("stroke-width", nominal_stroke) //设置 SVG 元素的描边宽度的属性
+        .attr("r", d => d.weight * 40) //按照比重设置大小
+        // .attr("r", 10)
+      .attr("fill", d => color(d.type))
 
-      node.append("text")
+
+      const text = node.append("text")
         .attr("x", 8)
-        .attr("y", "0.31em")
+        .attr("y", "1.5em")
+        .attr('text-anchor', 'middle')
         .text(d => d.id)
         .clone(true).lower()
         .attr("fill", "none")
         .attr("stroke", "white")
         .attr("stroke-width", 3);
 
-      // .call(zoom.transform, d3.zoomIdentity);;
-      // 在 useEffect 中选择 <g> 和 <defs> 元素
+      // 节点拖动时，路径重新指向
+      function linkArc(d) {
+        const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y);
+        return `
+            M${d.source.x},${d.source.y}
+            A${r},${r} 0 0,1 ${d.target.x},${d.target.y}
+          `;
+      }
+
+      // 定义缩放函数的回调
+      function zoomed(event) {
+        // 获取缩放和平移的变换
+        const transform = event.transform;
+        link.attr('transform', transform);
+        node_.attr('transform', transform)
+
+      }
+      // 拖动事件
       function drag(simulation) {
         function dragstarted(event, d) {
           if (!event.active) simulation.alphaTarget(0.3).restart();
-          const nodeObject = nodes.find(node => node.id === d.id);
-          if (nodeObject) {
-            nodeObject.fx = nodeObject.x;
-            nodeObject.fy = nodeObject.y;
-          }
+          d.fx = d.x;
+          d.fy = d.y;
         }
-      
-        function dragged(event, d) {
-          const nodeObject = nodes.find(node => node.id === d.id);
 
-          if (nodeObject) {
-            nodeObject.fx = event.x;
-            nodeObject.fy = event.y;
-          }
+        function dragged(event, d) {
+          d.fx = event.x;
+          d.fy = event.y;
         }
-      
+
         function dragended(event, d) {
           if (!event.active) simulation.alphaTarget(0);
-          const nodeObject = nodes.find(node => node.id === d.id);
-
-          if (nodeObject) {
-            nodeObject.fx = null;
-            nodeObject.fy = null;
-          }
+          d.fx = null;
+          d.fy = null;
         }
-      
+
         return d3.drag()
-          .on("start", dragstarted)
-          .on("drag", dragged)
-          .on("end", dragended);
+          .on("start", (d3, d) => dragstarted(d3, d))
+          .on("drag", (d3, d) => dragged(d3, d))
+          .on("end", (d3, d) => dragended(d3, d));
+
+
       }
-      
+
       simulation.on("tick", () => {
+
         link.attr("d", linkArc);
         node.attr("transform", d => `translate(${d.x},${d.y})`);
       });
@@ -182,4 +221,4 @@ const LinePlot = (props) => {
     </div>
   )
 }
-export default LinePlot
+export default React.memo(LinePlot)
