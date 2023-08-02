@@ -62,9 +62,9 @@ bundleStatsFile = resolve(bundleStatsFile);
 bundleStatsFile = path.join(bundleStatsFile, "package.json");
 parseAndAnalyse(bundleStatsFile);
 
-async function parseAndAnalyse(bundleStatsFile) {
+ async function parseAndAnalyse(bundleStatsFile) {
   try {
-    const bundleStats =  analyzer.readStatsFromFile(bundleStatsFile);
+    const bundleStats = await analyzer.readStatsFromFile(bundleStatsFile);
     if (mode === 'server') {
       viewer.startServer(bundleStats);
     } else if (mode === 'static') {
@@ -86,6 +86,7 @@ async function parseAndAnalyse(bundleStatsFile) {
   } catch (err) {
     // logger.error(`Couldn't read webpack bundle stats from "${bundleStatsFile}":\n${err}`);
     // logger.debug(err.stack);
+    debugger
     process.exit(1);
   }
 }

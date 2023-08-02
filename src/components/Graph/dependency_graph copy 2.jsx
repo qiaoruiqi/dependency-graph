@@ -107,7 +107,6 @@ const LinePlot = (props) => {
         .attr("stroke", "white")
         .attr("stroke-width", nominal_stroke) //设置 SVG 元素的描边宽度的属性
         // .attr("r", d => d.weight * 40) 按照比重设置大小
-        。
         .attr("fill", d => color(d.type))
 
 

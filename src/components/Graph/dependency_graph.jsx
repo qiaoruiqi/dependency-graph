@@ -1,33 +1,11 @@
 import React, { FC, useEffect, useRef, useState } from 'react';
 import * as d3 from "d3";
 
-// export interface chartDataPorps {
-//   source: string;
-//   target: string;
-// }
-
-
-// export interface graphPlotPorps {
-//   data: chartDataPorps[];
-//   width: number;
-//   height: number;
-//   marginTop: number;
-//   marginRight: number;
-//   marginBottom: number;
-//   marginLeft: number;
-//   children?: React.ReactNode;
-// }
-// const LinePlot: FC<graphPlotPorps> = (props) => {
-
-
-
-// 缩放事件的回调函数
-
 const LinePlot = (props) => {
   let {
     data,
-    width = 1690,
-    height = 1500,
+    width = 2000,
+    height = 2000,
     marginTop = 20,
     marginRight = 20,
     marginBottom = 20,
@@ -42,9 +20,7 @@ const LinePlot = (props) => {
   const gLink = d3.create("svg:g");
   const gNode = d3.create("svg:g");
   var nominal_stroke = 1.5;
-  var max_stroke = 4.5;
-  var min_zoom = 0.1;
-  var max_zoom = 7;
+
   useEffect(() => {
     if (shouldRender) {
       const simulation = d3.forceSimulation(nodeArray)
@@ -86,7 +62,7 @@ const LinePlot = (props) => {
       // 创建 <g> 元素并添加链接（<path>）
       const link = gLink
         .attr("fill", "none")
-        .attr("stroke-width", nominal_stroke)
+        .attr("stroke-width", 1.5)
         .selectAll("path")
         .data(graph)// 使用 data() 方法绑定数据
         .join("path")// 使用 join() 方法来创建 <path> 元素
@@ -103,18 +79,10 @@ const LinePlot = (props) => {
         .data(nodeArray)
         .join("g")
         .call(drag(simulation))
-        .on('mouseover', handleMouseOver)
-        .on('click', handleMouseOut) // 点击节点
+       
         // .on('mouseout', handleMouseOut) // 鼠标移开节点
-      // 用于判断连接线的文本是否与节点相连
   
-      // // 鼠标移入节点时的处理函数
-      // function mouseover(event, d) {
-      //   var hoveredNode = d; // 获取当前鼠标悬停的节点数据
-      //   console.log("当前悬停的节点：", hoveredNode);
-      //   node.classed("faded", true); // 先将所有节点变暗
-      //   d3.select(this).classed("highlighted", true); // 鼠标所在节点高亮
-      // }
+      // 鼠标移入节点时的处理函数
       function handleMouseOver(event,d) {
         var hoveredNode = d; // 获取当前鼠标悬停的节点数据
         console.log("当前悬停的节点：", hoveredNode);
@@ -131,6 +99,7 @@ const LinePlot = (props) => {
         // 设置连接线的透明度
         link.style('opacity', link => link.source === d  ? 1 : 0.1);
       }
+      // 移出节点时的处理函数
       function handleMouseOut(event,d) {
         var hoveredNode = d; // 获取当前鼠标悬停的节点数据
         console.log("当前悬停的节点：", hoveredNode);
@@ -145,7 +114,8 @@ const LinePlot = (props) => {
         .attr("r", d => d.weight * 40) //按照比重设置大小
         // .attr("r", 10)
       .attr("fill", d => color(d.type))
-
+      .on('mouseover', handleMouseOver)
+      .on('click', handleMouseOut) // 点击节点
 
       const text = node.append("text")
         .attr("x", 8)
@@ -214,11 +184,8 @@ const LinePlot = (props) => {
   }, [data]);
 
   return (
-    <div >
-      {/* 将 SVG 元素插入到 DOM 中 */}
       <svg ref={svgRef} >
       </svg>
-    </div>
   )
 }
 export default React.memo(LinePlot)
