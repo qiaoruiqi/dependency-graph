@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import LinePlot from './components/Graph';
-import useDebounce from './hooks/useDebounce'
+
 import axios from 'axios';
 function App() {
   const [count, setCount] = useState(0)
@@ -11,14 +11,12 @@ function App() {
   };
   const [data, setData] = useState(null);
   const [inputValue, setInputValue] = useState('');
-  const debounceValue = useDebounce(inputValue, 500);
-  /**
-   * 键盘按下去的事件 
-   */
+
   const handleKeyDown = (e) => {
     console.log(77,inputValue)
+    let param1 = inputValue;
     if(e.keyCode===13) {
-      const apiUrl = 'http://localhost:4000/';
+      const apiUrl = 'http://localhost:4000/search?param1='+ inputValue;
       axios.get(apiUrl)
       .then(response => {
         // 请求成功，将数据保存到state中
@@ -34,22 +32,24 @@ function App() {
   }
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
+   
   };
+
   useEffect(() => {
     // 定义后端API的URL
-    const apiUrl = 'http://localhost:4000/';
-    // 使用axios发起GET请求
-    axios.get(apiUrl)
-      .then(response => {
-        // 请求成功，将数据保存到state中
-        console.log(response, 2222)
+    const apiUrl = 'http://localhost:4000/search';
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(apiUrl);
         setData(response.data);
-      })
-      .catch(error => {
-        // 请求失败，处理错误
+      } catch (error) {
         console.error('Error fetching data:', error);
-      });
-  }, []);
+      }
+    };
+
+    fetchData();
+    
+  },[]);
   return (
     <>
       <div className="graph-input" >

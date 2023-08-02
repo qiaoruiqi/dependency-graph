@@ -11,18 +11,23 @@ const LinePlot = (props) => {
     marginBottom = 20,
     marginLeft = 20 } = props;
   const svgRef = useRef(null);
+  const [dataToRender, setDataToRender] = useState(data);
   const [shouldRender, setShouldRender] = useState(true);
   // 在组件外部创建 <defs> 和 <g> 元素
-  const { graph, nodeArray } = data;
-  const types = Array.from(new Set(nodeArray.map(d => d.type)));
-  const links = graph.map(d => Object.create(d))
-  const gdefs = d3.create("svg:defs");
-  const gLink = d3.create("svg:g");
-  const gNode = d3.create("svg:g");
-  var nominal_stroke = 1.5;
+
 
   useEffect(() => {
-    if (shouldRender) {
+    setDataToRender(data);
+    d3.select(svgRef.current).selectAll("*").remove();
+    console.log(111,data);
+      const { graph, nodeArray } = data;
+      console.log(graph,nodeArray)
+      const types = Array.from(new Set(nodeArray.map(d => d.type)));
+      const links = graph.map(d => Object.create(d))
+      const gdefs = d3.create("svg:defs");
+      const gLink = d3.create("svg:g");
+      const gNode = d3.create("svg:g");
+      var nominal_stroke = 1.5;
       const simulation = d3.forceSimulation(nodeArray)
         .force("link", d3.forceLink(graph).id(d => d.id))
         .force("charge", d3.forceManyBody().strength(-400))
@@ -176,11 +181,9 @@ const LinePlot = (props) => {
         link.attr("d", linkArc);
         node.attr("transform", d => `translate(${d.x},${d.y})`);
       });
-      setShouldRender(false);
       return () => simulation.stop();
       // 设置 shouldRender 为 false，防止重复渲染
 
-    }
   }, [data]);
 
   return (

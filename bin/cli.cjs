@@ -64,7 +64,7 @@ parseAndAnalyse(bundleStatsFile);
 
  async function parseAndAnalyse(bundleStatsFile) {
   try {
-    const bundleStats = await analyzer.readStatsFromFile(bundleStatsFile);
+    const bundleStats =  analyzer.readStatsFromFile(bundleStatsFile);
     if (mode === 'server') {
       viewer.startServer(bundleStats);
     } else if (mode === 'static') {
