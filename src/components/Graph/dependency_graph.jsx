@@ -5,7 +5,7 @@ const LinePlot = (props) => {
   let {
     data,
     width = 2000,
-    height = 2000,
+    height = 1400,
     marginTop = 20,
     marginRight = 20,
     marginBottom = 20,
@@ -20,16 +20,16 @@ const LinePlot = (props) => {
     setDataToRender(data);
     d3.select(svgRef.current).selectAll("*").remove();
     console.log(111,data);
-      const { graph, nodeArray } = data;
-      console.log(graph,nodeArray)
-      const types = Array.from(new Set(nodeArray.map(d => d.type)));
-      const links = graph.map(d => Object.create(d))
+      const { uniqueGraph, uniqueNodeArray } = data;
+      console.log(uniqueGraph,uniqueNodeArray)
+      const types = Array.from(new Set(uniqueNodeArray.map(d => d.type)));
+      const links = uniqueGraph.map(d => Object.create(d))
       const gdefs = d3.create("svg:defs");
       const gLink = d3.create("svg:g");
       const gNode = d3.create("svg:g");
       var nominal_stroke = 1.5;
-      const simulation = d3.forceSimulation(nodeArray)
-        .force("link", d3.forceLink(graph).id(d => d.id))
+      const simulation = d3.forceSimulation(uniqueNodeArray)
+        .force("link", d3.forceLink(uniqueGraph).id(d => d.id))
         .force("charge", d3.forceManyBody().strength(-400))
         .force("x", d3.forceX())
         .force("y", d3.forceY());
@@ -69,7 +69,7 @@ const LinePlot = (props) => {
         .attr("fill", "none")
         .attr("stroke-width", 1.5)
         .selectAll("path")
-        .data(graph)// 使用 data() 方法绑定数据
+        .data(uniqueGraph)// 使用 data() 方法绑定数据
         .join("path")// 使用 join() 方法来创建 <path> 元素
         .attr("stroke", d => color(d.type))
         .attr("marker-end", d => `url(${new URL(`#arrow-${d.type}`, location)})`)
@@ -81,7 +81,7 @@ const LinePlot = (props) => {
         .attr("stroke-linecap", "round")
         .attr("stroke-linejoin", "round")
         .selectAll("g")
-        .data(nodeArray)
+        .data(uniqueNodeArray)
         .join("g")
         .call(drag(simulation))
        
@@ -95,7 +95,7 @@ const LinePlot = (props) => {
         node.style('opacity', d => {
           hoveredNode
           if(d.id===hoveredNode.id) return 1;
-          const opacityValue = graph.some((item) => {
+          const opacityValue = uniqueGraph.some((item) => {
             return item.source.id === hoveredNode.id && item.target.id === d.id;
           }) ? 1 : 0.1;
           return opacityValue;
@@ -116,8 +116,8 @@ const LinePlot = (props) => {
       const circle = node.append("circle")
         .attr("stroke", "white")
         .attr("stroke-width", nominal_stroke) //设置 SVG 元素的描边宽度的属性
-        .attr("r", d => d.weight * 40) //按照比重设置大小
-        // .attr("r", 10)
+        // .attr("r", d => d.weight * 40) //按照比重设置大小
+        .attr("r", 15)
       .attr("fill", d => color(d.type))
       .on('mouseover', handleMouseOver)
       .on('click', handleMouseOut) // 点击节点
