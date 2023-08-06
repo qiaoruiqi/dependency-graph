@@ -40,10 +40,7 @@ const program = commander
     "Don't open report in default browser automatically."
   )
   .option(
-    '-l, --log-level <level>',
-    'Log level.\n' +
-     `Possible values: ${[...Logger.levels].join(', ')}`,
-    Logger.defaultLevel
+    '-l, --level <level>'
   )
   .parse(process.argv);
 let [bundleStatsFile, bundleDir] = program.args;
@@ -51,7 +48,7 @@ let {
   mode,
   open: openBrowser,
   title: reportTitle,
-  logLevel,
+  level,
 } = program.opts();
 if (!bundleStatsFile) showHelp('Provide path to Webpack Stats file as first argument');
 if (mode !== 'server' && mode !== 'static' && mode !== 'json') {
@@ -66,7 +63,7 @@ parseAndAnalyse(bundleStatsFile);
   try {
     const bundleStats =  analyzer.readStatsFromFile(bundleStatsFile);
     if (mode === 'server') {
-      viewer.startServer(bundleStats);
+      viewer.startServer(bundleStats,{bundleDir:bundleStatsFile},level);
     } else if (mode === 'static') {
       viewer.generateReport(bundleStats, {
         openBrowser,
